@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desperdício Zero na Escola - ODS 12</title>
+    <!-- Carregando Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Carregando Google Fonts: Inter e Fredoka (para títulos amigáveis e modernos) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Configuração personalizada do Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Fredoka', 'sans-serif'],
+                    },
+                    colors: {
+                        ods12: {
+                            DEFAULT: '#BF8B2E', // Cor oficial do ODS 12 (Ouro/Mostarda)
+                            light: '#DFAC4E',
+                            dark: '#966A1D'
+                        },
+                        eco: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Estilos customizados complementares para animações suaves */
+        body {
+            background-color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tab-active {
+            background-color: #16a34a;
+            color: white;
+            box-shadow: 0 4px 14px 0 rgba(22, 163, 74, 0.39);
+        }
+        .bar-transition {
+            transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .progress-transition {
+            transition: width 0.5s ease-out;
+        }
+        /* Ocultar barra de rolagem horizontal mantendo funcionalidade */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Notificação Toast Customizada (Substitui alert/confirm) -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Modal de Confirmação Customizado -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl transform transition-all">
+            <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mb-4 mx-auto">
+                ⚠️
+            </div>
+            <h3 id="modal-title" class="font-display text-xl font-bold text-center text-slate-900 mb-2">Iniciar Nova Semana?</h3>
+            <p id="modal-desc" class="text-slate-600 text-center text-sm mb-6">
+                Isso vai zerar todos os pesos registrados de Segunda a Sexta para começar uma nova contagem no refeitório.
+            </p>
+            <div class="flex gap-3">
+                <button id="modal-cancel" class="flex-1 py-3 px-4 rounded-xl font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 transition">
+                    Cancelar
+                </button>
+                <button id="modal-confirm" class="flex-1 py-3 px-4 rounded-xl font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-600/30 transition">
+                    Sim, Zerar Tudo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Receita Completa -->
+    <div id="recipe-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl my-8 relative">
+            <button onclick="closeRecipeModal()" class="absolute top-5 right-5 w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-600 font-bold transition" aria-label="Fechar receita">
+                ✕
+            </button>
+            <div id="recipe-modal-content">
+                <!-- Preenchido via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Cabeçalho Principal -->
+    <header class="bg-gradient-to-r from-emerald-600 via-green-600 to-teal-600 text-white shadow-lg">
+        <div class="max-w-5xl mx-auto px-4 py-6 sm:py-8">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase mb-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-amber-300 animate-pulse"></span>
+                        ODS 12 • Consumo e Produção Responsáveis
+                    </div>
+                    <h1 class="font-display text-3xl sm:text-4xl font-bold tracking-tight flex items-center gap-2">
+                        <span>🥗</span> Desperdício Zero na Escola
+                    </h1>
+                    <p class="text-emerald-50 text-sm sm:text-base mt-1 max-w-xl">
+                        Transformando o nosso refeitório: monitore sobras, aprenda hábitos conscientes e descubra receitas incríveis!
+                    </p>
+                </div>
+                
+                <!-- Selo ODS 12 -->
+                <div class="self-start sm:self-center bg-ods12 text-white p-3 rounded-2xl shadow-md border-2 border-white/30 flex items-center gap-3 shrink-0">
+                    <div class="font-display text-3xl font-bold leading-none">12</div>
+                    <div class="text-[11px] font-bold uppercase leading-tight max-w-[110px]">
+                        Consumo e Produção Responsáveis
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Barra de Navegação entre Abas -->
+    <nav class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4">
+            <div class="flex space-x-2 py-3 overflow-x-auto no-scrollbar" role="tablist">
+                <button onclick="switchTab('placar')" id="tab-placar" role="tab" aria-selected="true"
+                    class="tab-active flex items-center gap-2 px-5 py-2.5 rounded-2xl font-semibold text-sm sm:text-base whitespace-nowrap transition-all">
+                    <span>⚖️</span> Placar de Desperdício
+                </button>
+                <button onclick="switchTab('relatorio')" id="tab-relatorio" role="tab" aria-selected="false"
+                    class="text-slate-600 hover:bg-slate-100 flex items-center gap-2 px-5 py-2.5 rounded-2xl font-semibold text-sm sm:text-base whitespace-nowrap transition-all">
+                    <span>📅</span> Relatório & Calendário
+                </button>
+                <button onclick="switchTab('guia')" id="tab-guia" role="tab" aria-selected="false"
+                    class="text-slate-600 hover:bg-slate-100 flex items-center gap-2 px-5 py-2.5 rounded-2xl font-semibold text-sm sm:text-base whitespace-nowrap transition-all">
+                    <span>🍽️</span> Guia Consciente
+                </button>
+                <button onclick="switchTab('receitas')" id="tab-receitas" role="tab" aria-selected="false"
+                    class="text-slate-600 hover:bg-slate-100 flex items-center gap-2 px-5 py-2.5 rounded-2xl font-semibold text-sm sm:text-base whitespace-nowrap transition-all">
+                    <span>🍌</span> Receitas Aproveita Tudo
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-grow max-w-5xl w-full mx-auto px-4 py-6 sm:py-8">
+
+        <!-- ========================================== -->
+        <!-- SEÇÃO 1: PLACAR DE DESPERDÍCIO (PESAGEM)   -->
+        <!-- ========================================== -->
+        <section id="section-placar" class="space-y-6">
+            
+            <!-- Indicador de Mês e Semana Ativos -->
+            <div class="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div class="flex items-center gap-2 text-sm font-semibold text-emerald-900">
+                    <span>📍</span>
+                    <span>Editando agora: <strong id="active-period-badge" class="text-emerald-700 underline">Novembro • Semana 4</strong></span>
+                </div>
+                <button type="button" onclick="switchTab('relatorio')" class="text-xs font-bold text-emerald-700 hover:text-emerald-900 bg-white px-3 py-1.5 rounded-xl border border-emerald-200 self-start sm:self-center transition">
+                    📅 Trocar Mês ou Semana
+                </button>
+            </div>
+
+            <!-- Cards de Resumo Rápido (KPIs) -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <!-- Total Desperdiçado -->
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-2xl shrink-0">
+                        🗑️
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total na Semana</p>
+                        <p class="font-display text-2xl sm:text-3xl font-bold text-slate-800">
+                            <span id="kpi-total-kg">0.0</span> <span class="text-base font-medium text-slate-500">kg</span>
+                        </p>
+                        <p class="text-xs text-slate-500 mt-0.5">de sobras nos pratos</p>
+                    </div>
+                </div>
+
+                <!-- Refeições Equivalentes Perdidas -->
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl shrink-0">
+                        🍽️
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Refeições Perdidas</p>
+                        <p class="font-display text-2xl sm:text-3xl font-bold text-amber-600">
+                            <span id="kpi-meals">0</span> <span class="text-base font-medium text-slate-500">pratos</span>
+                        </p>
+                        <p class="text-xs text-slate-500 mt-0.5">base: 350g por refeição</p>
+                    </div>
+                </div>
+
+                <!-- Melhor Dia da Semana -->
+                <div class="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl shrink-0">
+                        🏆
+                    </div>
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Dia Mais Consciente</p>
+                        <p id="kpi-best-day" class="font-display text-xl sm:text-2xl font-bold text-emerald-600">
+                            --
+                        </p>
+                        <p id="kpi-best-day-sub" class="text-xs text-slate-500 mt-0.5">menor desperdício registrado</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barra de Meta Semanal -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div>
+                        <h2 class="font-display text-lg font-bold text-slate-800 flex items-center gap-2">
+                            🎯 Meta Máxima da Semana: <span class="text-emerald-600" id="goal-target-label">15.0 kg</span>
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-500">
+                            O desafio da escola é manter o total de sobras da semana abaixo de 15 kg!
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="goal-input" class="text-xs font-semibold text-slate-500">Ajustar Meta (kg):</label>
+                        <input type="number" id="goal-input" min="1" max="200" step="0.5" value="15"
+                            onchange="updateWeeklyGoal(this.value)"
+                            class="w-20 px-2.5 py-1.5 text-sm font-bold text-center border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    </div>
+                </div>
+
+                <!-- Barra de Progresso Visual -->
+                <div class="w-full h-5 bg-slate-100 rounded-full overflow-hidden p-1">
+                    <div id="goal-progress-bar" class="h-full rounded-full bg-emerald-500 progress-transition" style="width: 0%"></div>
+                </div>
+
+                <!-- Feedback Dinâmico da Meta -->
+                <div id="goal-feedback" class="mt-3 p-3 rounded-2xl text-sm font-medium flex items-center gap-2 bg-emerald-50 text-emerald-800">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+
+            <!-- Grid: Formulário de Registro + Gráfico de Barras -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Formulário de Pesagem Diária (5 colunas) -->
+                <div class="lg:col-span-5 bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col justify-between">
+                    <div>
+                        <h2 class="font-display text-xl font-bold text-slate-800 mb-1">Registrar Pesagem</h2>
+                        <p class="text-sm text-slate-500 mb-5">Pese o balde de sobras após a merenda e lance o valor abaixo.</p>
+
+                        <form id="weight-form" onsubmit="handleWeightSubmit(event)" class="space-y-4">
+                            <div>
+                                <label for="day-select" class="block text-sm font-semibold text-slate-700 mb-1.5">Dia da Semana</label>
+                                <select id="day-select" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                                    <option value="seg">Segunda-feira</option>
+                                    <option value="ter">Terça-feira</option>
+                                    <option value="qua">Quarta-feira</option>
+                                    <option value="qui">Quinta-feira</option>
+                                    <option value="sex">Sexta-feira</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="weight-input" class="block text-sm font-semibold text-slate-700 mb-1.5">Peso das Sobras (em kg)</label>
+                                <div class="relative">
+                                    <input type="number" id="weight-input" step="0.05" min="0" max="500" required placeholder="Ex: 2.4"
+                                        class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 font-bold text-lg text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 transition">
+                                    <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">kg</span>
+                                </div>
+                                <p class="text-xs text-slate-400 mt-1.5">Dica: Use ponto ou vírgula para gramas (ex: 1.5 = 1kg e 500g).</p>
+                            </div>
+
+                            <button type="submit" class="w-full py-3.5 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-bold shadow-lg shadow-emerald-600/25 transition flex items-center justify-center gap-2">
+                                <span>💾</span> Salvar Pesagem do Dia
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Botões de Gerenciamento da Semana -->
+                    <div class="mt-6 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                        <button type="button" onclick="loadSampleData()" class="text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-xl transition">
+                            📊 Restaurar Exemplo
+                        </button>
+                        <button type="button" onclick="openResetModal()" class="text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 px-3 py-2 rounded-xl transition">
+                            🔄 Zerar Semana Atual
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Gráfico Comparativo Diário (7 colunas) -->
+                <div class="lg:col-span-7 bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 class="font-display text-xl font-bold text-slate-800">Comparativo da Semana</h2>
+                            <p class="text-sm text-slate-500">Quanto menor a barra, mais alimentos salvamos!</p>
+                        </div>
+                        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-slate-100 text-slate-600">
+                            Meta diária ideal: ≤ 3.0 kg
+                        </span>
+                    </div>
+
+                    <!-- Área do Gráfico de Barras Customizado -->
+                    <div class="flex-grow flex items-end justify-around gap-2 sm:gap-4 pt-8 pb-2 px-2 min-h-[240px] border-b border-slate-200 relative" id="chart-container">
+                        <!-- Barras geradas dinamicamente via JS -->
+                    </div>
+
+                    <!-- Legenda do Gráfico -->
+                    <div class="flex flex-wrap items-center justify-center gap-4 mt-4 text-xs font-medium text-slate-600">
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500"></span> Excelente (≤ 2.5 kg)
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-amber-400"></span> Atenção (2.6 - 4.0 kg)
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-3 h-3 rounded-full bg-rose-500"></span> Alto Desperdício (> 4.0 kg)
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SEÇÃO 2: RELATÓRIO & CALENDÁRIO MENSAL     -->
+        <!-- ========================================== -->
+        <section id="section-relatorio" class="hidden space-y-6">
+
+            <!-- Cabeçalho e Seletor de Meses do Ano -->
+            <div class="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <span class="inline-block px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold uppercase tracking-wider mb-2">
+                            Acompanhamento Anual
+                        </span>
+                        <h2 class="font-display text-2xl sm:text-3xl font-bold text-slate-900">
+                            Calendário & Relatório Mensal 📅
+                        </h2>
+                        <p class="text-slate-600 text-sm mt-1">
+                            Clique em um mês do ano e escolha a semana para acompanhar as metas mensais e semanais da escola.
+                        </p>
+                    </div>
+
+                    <!-- Ajuste da Meta Mensal -->
+                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 flex items-center gap-3 self-start md:self-center">
+                        <div>
+                            <label for="monthly-goal-input" class="block text-xs font-bold text-slate-600">Meta de <span id="monthly-goal-label-month" class="text-emerald-700">Novembro</span></label>
+                            <span class="text-[11px] text-slate-400">individual deste mês</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <input type="number" id="monthly-goal-input" min="5" max="1000" step="1" value="60"
+                                onchange="updateMonthlyGoal(this.value)"
+                                class="w-20 px-2.5 py-1.5 text-sm font-bold text-center border border-slate-300 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <span class="text-xs font-bold text-slate-500">kg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pequeno Calendário com os 12 Meses do Ano -->
+                <div id="months-calendar-grid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+                    <!-- Meses gerados dinamicamente via JS -->
+                </div>
+            </div>
+
+            <!-- Resumo da Meta Mensal do Mês Selecionado -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h3 class="font-display text-xl font-bold text-slate-800">
+                            Desempenho de <span id="report-month-name" class="text-emerald-600">Novembro</span>
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-500">
+                            Soma das 4 semanas registradas neste mês em comparação com a meta mensal.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div class="text-right">
+                            <span class="block text-xs font-semibold text-slate-400 uppercase">Total no Mês</span>
+                            <span class="font-display text-2xl font-bold text-slate-800"><span id="report-month-total">0.0</span> kg</span>
+                        </div>
+                        <div class="h-8 w-px bg-slate-200"></div>
+                        <div class="text-right">
+                            <span class="block text-xs font-semibold text-slate-400 uppercase">Meta Mensal</span>
+                            <span class="font-display text-2xl font-bold text-emerald-600"><span id="report-month-goal">60.0</span> kg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Barra de Progresso Mensal -->
+                <div class="w-full h-5 bg-slate-100 rounded-full overflow-hidden p-1">
+                    <div id="month-progress-bar" class="h-full rounded-full bg-emerald-500 progress-transition" style="width: 0%"></div>
+                </div>
+
+                <div id="month-goal-feedback" class="mt-3 p-3.5 rounded-2xl text-sm font-medium flex items-center gap-2.5 bg-emerald-50 text-emerald-800">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+
+            <!-- Cards das 4 Semanas do Mês (Acompanhamento Semanal + Seleção) -->
+            <div>
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <h3 class="font-display text-lg font-bold text-slate-800">
+                        Semanas de <span id="weeks-section-month">Novembro</span>
+                    </h3>
+                    <span class="text-xs text-slate-500">Clique em uma semana para editar os pesos no Placar</span>
+                </div>
+                <div id="weeks-cards-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Cards das 4 semanas gerados via JS -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SEÇÃO 3: GUIA DO PRATO CONSCIENTE          -->
+        <!-- ========================================== -->
+        <section id="section-guia" class="hidden space-y-8">
+            
+            <!-- Banner Introdutório -->
+            <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 rounded-3xl p-6 sm:p-8">
+                <div class="max-w-2xl">
+                    <span class="inline-block px-3 py-1 rounded-full bg-amber-200/70 text-amber-900 text-xs font-bold uppercase tracking-wider mb-2">
+                        Antes de entrar na fila
+                    </span>
+                    <h2 class="font-display text-2xl sm:text-3xl font-bold text-slate-900 mb-2">
+                        Guia do Prato Consciente 🍽️
+                    </h2>
+                    <p class="text-slate-600 text-sm sm:text-base">
+                        Pequenas atitudes na hora de se servir evitam que toneladas de comida boa acabem no lixo todos os anos. Siga estes 4 passos no refeitório:
+                    </p>
+                </div>
+
+                <!-- Grid de 4 Dicas Rápidas -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100">
+                        <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl font-bold mb-3">
+                            1️⃣
+                        </div>
+                        <h3 class="font-display font-bold text-slate-800 mb-1">Olhe o cardápio</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Veja o que está sendo servido hoje antes de pegar o prato e identifique o que você realmente gosta.
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100">
+                        <div class="w-11 h-11 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center text-xl font-bold mb-3">
+                            2️⃣
+                        </div>
+                        <h3 class="font-display font-bold text-slate-800 mb-1">Comece com pouco</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Não conhece um alimento ou não está com tanta fome? Peça apenas uma colher para experimentar!
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100">
+                        <div class="w-11 h-11 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-xl font-bold mb-3">
+                            3️⃣
+                        </div>
+                        <h3 class="font-display font-bold text-slate-800 mb-1">Repita se quiser</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            É muito melhor repetir o prato depois de raspar o primeiro do que encher demais e jogar fora.
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-amber-100">
+                        <div class="w-11 h-11 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl font-bold mb-3">
+                            4️⃣
+                        </div>
+                        <h3 class="font-display font-bold text-slate-800 mb-1">Missão Prato Limpo</h3>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            Coma com calma, aproveite a refeição com os colegas e entregue o prato limpinho!
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- SEÇÃO 4: RECEITAS APROVEITA TUDO           -->
+        <!-- ========================================== -->
+        <section id="section-receitas" class="hidden space-y-6">
+            
+            <div class="bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <span class="inline-block px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold uppercase tracking-wider mb-2">
+                        Culinária Sustentável na Escola
+                    </span>
+                    <h2 class="font-display text-2xl sm:text-3xl font-bold text-slate-900">
+                        Receitas Aproveita Tudo 🌿
+                    </h2>
+                    <p class="text-slate-600 text-sm sm:text-base mt-1 max-w-2xl">
+                        Receitas práticas feitas 100% com os alimentos enviados às escolas públicas do Paraná (Fundepar / Agricultura Familiar), pensadas para aproveitar integralmente o estoque da cozinha!
+                    </p>
+                </div>
+                <div class="text-4xl sm:text-5xl bg-emerald-50 p-4 rounded-3xl self-start md:self-center">
+                    👩‍🍳👨‍🍳
+                </div>
+            </div>
+
+            <!-- Grid de Cards de Receitas -->
+            <div id="recipes-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards gerados via JS -->
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="bg-white border-t border-slate-200 mt-12">
+        <div class="max-w-5xl mx-auto px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs sm:text-sm text-slate-500">
+            <div class="flex items-center gap-2 font-medium text-slate-700">
+                <span>🌱</span> Projeto Escolar • ODS 12 (Consumo e Produção Responsáveis)
+            </div>
+            <p class="text-center sm:text-right">
+                Os dados da pesagem ficam salvos automaticamente neste navegador.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Lógica Completa da Aplicação -->
+    <script>
+        (function() {
+        // ==========================================
+        // 1. DADOS E ESTADO DA APLICAÇÃO
+        // ==========================================
+        const STORAGE_KEY = 'desperdicio_zero_escola_v2';
+        const MEAL_WEIGHT_KG = 0.35; // 350g por refeição equivalente
+
+        const DAYS_META = [
+            { id: 'seg', label: 'Segunda', full: 'Segunda-feira' },
+            { id: 'ter', label: 'Terça', full: 'Terça-feira' },
+            { id: 'qua', label: 'Quarta', full: 'Quarta-feira' },
+            { id: 'qui', label: 'Quinta', full: 'Quinta-feira' },
+            { id: 'sex', label: 'Sexta', full: 'Sexta-feira' }
+        ];
+
+        const MONTHS_META = [
+            { id: 0, short: 'Jan', full: 'Janeiro' },
+            { id: 1, short: 'Fev', full: 'Fevereiro' },
+            { id: 2, short: 'Mar', full: 'Março' },
+            { id: 3, short: 'Abr', full: 'Abril' },
+            { id: 4, short: 'Mai', full: 'Maio' },
+            { id: 5, short: 'Jun', full: 'Junho' },
+            { id: 6, short: 'Jul', full: 'Julho' },
+            { id: 7, short: 'Ago', full: 'Agosto' },
+            { id: 8, short: 'Set', full: 'Setembro' },
+            { id: 9, short: 'Out', full: 'Outubro' },
+            { id: 10, short: 'Nov', full: 'Novembro' },
+            { id: 11, short: 'Dez', full: 'Dezembro' }
+        ];
+
+        // Cria estrutura vazia para os 12 meses (4 semanas cada + meta mensal própria)
+        function createEmptyCalendar() {
+            const cal = {};
+            for (let m = 0; m < 12; m++) {
+                cal[m] = {
+                    monthlyGoalKg: 60.0,
+                    weeks: {
+                        1: { seg: 0, ter: 0, qua: 0, qui: 0, sex: 0 },
+                        2: { seg: 0, ter: 0, qua: 0, qui: 0, sex: 0 },
+                        3: { seg: 0, ter: 0, qua: 0, qui: 0, sex: 0 },
+                        4: { seg: 0, ter: 0, qua: 0, qui: 0, sex: 0 }
+                    }
+                };
+            }
+            return cal;
+        }
+
+        // Dados de exemplo preenchendo algumas semanas do mês atual (Novembro)
+        function createSampleState() {
+            const cal = createEmptyCalendar();
+            // Exemplo em Outubro (mês 9)
+            cal[9].monthlyGoalKg = 65.0;
+            cal[9].weeks[1] = { seg: 4.5, ter: 4.1, qua: 3.8, qui: 3.5, sex: 3.2 };
+            cal[9].weeks[2] = { seg: 3.9, ter: 3.6, qua: 3.4, qui: 3.0, sex: 2.9 };
+            cal[9].weeks[3] = { seg: 3.5, ter: 3.2, qua: 3.0, qui: 2.8, sex: 2.5 };
+            cal[9].weeks[4] = { seg: 3.2, ter: 2.9, qua: 2.7, qui: 2.5, sex: 2.2 };
+
+            // Exemplo em Novembro (mês 10)
+            cal[10].monthlyGoalKg = 55.0;
+            cal[10].weeks[1] = { seg: 3.8, ter: 3.4, qua: 3.1, qui: 2.9, sex: 2.6 };
+            cal[10].weeks[2] = { seg: 3.4, ter: 3.0, qua: 2.8, qui: 2.4, sex: 2.1 };
+            cal[10].weeks[3] = { seg: 3.1, ter: 2.7, qua: 2.5, qui: 2.1, sex: 1.8 };
+            cal[10].weeks[4] = { seg: 2.9, ter: 2.5, qua: 2.2, qui: 1.9, sex: 1.5 };
+
+            // Exemplo de meta reduzida em Dezembro (mês 11 - férias escolares)
+            cal[11].monthlyGoalKg = 30.0;
+
+            return {
+                weeklyGoalKg: 15.0,
+                selectedMonth: 10, // Novembro
+                selectedWeek: 4,   // Semana 4
+                calendar: cal
+            };
+        }
+
+        let appState = createSampleState();
+
+        // Banco de Receitas com alimentos reais das escolas públicas do Paraná (Fundepar / SEED-PR / Agricultura Familiar)
+        const RECIPES = [
+            {
+                id: 'revirado-feijao-parana',
+                title: 'Revirado Paranaense de Feijão com Ovos e Farinha',
+                tag: 'Almoço • Tradição PR',
+                time: '20 min',
+                emoji: '🍛',
+                color: 'bg-amber-100 text-amber-900',
+                summary: 'Prato típico das escolas do Paraná que transforma sobras limpas de feijão cozido em uma refeição completa e super aceita pelos alunos.',
+                saves: 'Aproveita 100% do feijão preto ou carioca que sobrou na panela',
+                ingredients: [
+                    'Feijão preto ou carioca cozido (com pouco caldo)',
+                    'Ovos da agricultura familiar (1 ovo para cada 2 porções)',
+                    'Farinha de mandioca ou farinha de milho biju (enviadas pelo Fundepar)',
+                    'Alho, cebola e cheiro-verde da horta/agricultura familiar',
+                    'Óleo de soja e sal a gosto'
+                ],
+                steps: [
+                    'Em uma panela grande, refogue o alho e a cebola no óleo até dourar.',
+                    'Quebre os ovos diretamente na panela e mexa bem até ficarem cozidos em pedaços.',
+                    'Despeje o feijão cozido e misture em fogo médio até aquecer por completo.',
+                    'Vá adicionando a farinha de mandioca ou farinha de milho aos poucos, mexendo sempre até dar o ponto úmido de virado. Finalize com cheiro-verde.'
+                ]
+            },
+            {
+                id: 'escondidinho-batata-doce',
+                title: 'Escondidinho de Batata-Doce com Carne ou Frango',
+                tag: 'Almoço Favorito',
+                time: '40 min',
+                emoji: '🍠',
+                color: 'bg-orange-100 text-orange-800',
+                summary: 'Usa a batata-doce da agricultura familiar do Paraná com casca limpa e reaproveita carne moída ou frango desfiado do dia anterior.',
+                saves: 'Aproveita a batata-doce inteira (com casca rica em fibras) e carnes prontas',
+                ingredients: [
+                    'Batata-doce bem lavada (pode cozinhar com casca para render mais)',
+                    'Carne moída refogada ou peito de frango desfiado (sobra limpa)',
+                    'Leite integral ou composto lácteo enviado para a merenda',
+                    'Molho de tomate, cebola, alho e temperos naturais',
+                    'Sal a gosto'
+                ],
+                steps: [
+                    'Cozinhe as batatas-doces até ficarem bem macias e amasse no próprio caldeirão até virar um purê rústico.',
+                    'Misture um pouco de leite quente e uma pitada de sal ao purê para ficar cremoso e render bastante.',
+                    'Em assadeiras grandes, coloque o refogado de carne ou frango no fundo, cubra com o purê de batata-doce e leve ao forno por 15 minutos para dourar.'
+                ]
+            },
+            {
+                id: 'bolo-fuba-banana',
+                title: 'Bolo de Fubá com Banana Madura (Sem Desperdício)',
+                tag: 'Mais Merenda • Lanche',
+                time: '40 min',
+                emoji: '🍌',
+                color: 'bg-yellow-100 text-yellow-800',
+                summary: 'Feito com fubá orgânico e bananas muito maduras entregues pela agricultura familiar antes que passem do ponto.',
+                saves: 'Salva bananas maduras inteiras (polpa e casca limpa batida) no lanche escolar',
+                ingredients: [
+                    'Bananas bem maduras (com casca bem lavada para aproveitar tudo)',
+                    'Fubá de milho (item básico da pauta escolar do Paraná)',
+                    'Farinha de trigo',
+                    'Ovos inteiros',
+                    'Leite integral e óleo de soja',
+                    'Açúcar e fermento químico em pó'
+                ],
+                steps: [
+                    'Bata no liquidificador industrial as bananas (com casca limpa), os ovos, o leite, o óleo e o açúcar até virar um creme homogêneo.',
+                    'Despeje na bacia, misture o fubá e a farinha de trigo até incorporar bem.',
+                    'Acrescente o fermento em pó por último, misture devagar e asse em tabuleiros untados a 180°C por 30 minutos.'
+                ]
+            },
+            {
+                id: 'pate-sardinha-pao',
+                title: 'Patê Cremoso de Sardinha e Cenoura para Pães',
+                tag: 'Mais Merenda • Rápido',
+                time: '15 min',
+                emoji: '🥪',
+                color: 'bg-sky-100 text-sky-800',
+                summary: 'Receita oficial prática da pauta escolar: usa sardinha em lata, cenoura ralada e pão francês ou bisnaguinha.',
+                saves: 'Aproveita talos e cenouras inteiras sem precisar ir ao forno',
+                ingredients: [
+                    'Sardinha em lata (item padrão enviado pelo Fundepar)',
+                    'Cenoura crua bem lavada e ralada fina (com casca)',
+                    'Cheiro-verde e talos bem picadinhos',
+                    'Requeijão, creme de leite ou um fio de azeite/óleo para dar liga',
+                    'Pães franceses, pão de forma ou bisnaguinhas da merenda'
+                ],
+                steps: [
+                    'Escorra o líquido das latas de sardinha e amasse bem os filés com um garfo em uma bacia.',
+                    'Misture a cenoura ralada fina, o cheiro-verde picado e o creme para dar ponto de pasta.',
+                    'Recheie os pães na hora de servir no Mais Merenda de entrada ou saída.'
+                ]
+            },
+            {
+                id: 'risoto-frango-legumes',
+                title: 'Arroz de Forno / Risoto Caipira da Merenda',
+                tag: 'Almoço Único',
+                time: '30 min',
+                emoji: '🍲',
+                color: 'bg-emerald-100 text-emerald-800',
+                summary: 'Um dos pratos mais elogiados nas escolas do Paraná: junta arroz cozido, frango e legumes picados em uma única panela.',
+                saves: 'Reaproveita arroz branco cozido e legumes variados sem perda',
+                ingredients: [
+                    'Arroz branco cozido (sobra limpa ou feito na hora)',
+                    'Peito de frango ou linguiça de frango picada e refogada',
+                    'Legumes da semana picados em cubinhos (cenoura, abobrinha, milho ou vagem)',
+                    'Molho de tomate, alho, cebola e cheiro-verde'
+                ],
+                steps: [
+                    'Refogue o frango (ou linguiça) com alho, cebola e os legumes picados até ficarem macios.',
+                    'Adicione o molho de tomate e um pouco de água quente para formar um caldo saboroso.',
+                    'Misture o arroz cozido direto na panela, abafe por 5 minutos para pegar sabor e sirva quentinho.'
+                ]
+            },
+            {
+                id: 'sagu-suco-uva-maca',
+                title: 'Sagu de Uva com Maçã Picada (Sobremesa PR)',
+                tag: 'Sobremesa Escolar',
+                time: '35 min',
+                emoji: '🍇',
+                color: 'bg-purple-100 text-purple-800',
+                summary: 'Clássico das escolas paranaenses usando sagu de mandioca, suco de uva integral e maçãs com casca.',
+                saves: 'Aproveita maçãs pequenas ou amassadas picadas com casca',
+                ingredients: [
+                    'Sagu de mandioca (comum na pauta das escolas do PR)',
+                    'Suco de uva integral ou polpa de fruta regional',
+                    'Maçãs bem lavadas e picadas em cubinhos (com casca)',
+                    'Água e açúcar na medida do cardápio'
+                ],
+                steps: [
+                    'Cozinhe o sagu em água fervente mexendo de vez em quando até as bolinhas ficarem quase transparentes.',
+                    'Escorra o excesso de goma, volte à panela e adicione o suco de uva, o açúcar e os cubinhos de maçã com casca.',
+                    'Deixe ferver por mais 5 minutos, deixe esfriar e sirva como sobremesa no almoço.'
+                ]
+            },
+            {
+                id: 'polenta-cremosa-carne',
+                title: 'Polenta Cremosa ao Molho de Carne Moída',
+                tag: 'Almoço • Dias Frios',
+                time: '35 min',
+                emoji: '🌽',
+                color: 'bg-amber-100 text-amber-800',
+                summary: 'Perfeita para os dias frios do Paraná: usa fubá orgânico e rende dezenas de porções com baixo custo.',
+                saves: 'Aproveita sobras de carne moída refogada com legumes',
+                ingredients: [
+                    'Fubá de milho',
+                    'Água, alho, cebola, óleo e sal',
+                    'Carne moída refogada com molho de tomate e legumes picados (abobrinha ou cenoura)'
+                ],
+                steps: [
+                    'Dissolva o fubá em água fria antes de levar ao fogo para não empelotar.',
+                    'Despeje na panela com água quente temperada com alho, cebola e sal, mexendo até engrossar e cozinhar bem (cerca de 20 minutos).',
+                    'Sirva nos pratos ou bandejas coberta com o molho de carne moída bem quente.'
+                ]
+            },
+            {
+                id: 'torta-salgada-legumes',
+                title: 'Cuca / Torta Salgada de Legumes e Ovos',
+                tag: 'Lanche da Tarde',
+                time: '40 min',
+                emoji: '🥧',
+                color: 'bg-teal-100 text-teal-800',
+                summary: 'Receita oficial do caderno de receitas do Fundepar: fácil de bater e assar em tabuleiros grandes.',
+                saves: 'Usa legumes variados (repolho, cenoura, tomate) e talos picados',
+                ingredients: [
+                    'Ovos inteiros',
+                    'Leite integral e óleo de soja',
+                    'Farinha de trigo e fermento químico em pó',
+                    'Legumes picados (cenoura ralada, repolho fatiado fino, tomate e cebola)',
+                    'Sal e orégano'
+                ],
+                steps: [
+                    'Misture em uma bacia grande os ovos batidos, o leite, o óleo e o sal.',
+                    'Adicione a farinha de trigo até formar uma massa cremosa de bolo salgado.',
+                    'Incorpore todos os legumes picadinhos e o fermento em pó, despeje em assadeiras grandes untadas e asse a 180°C por 30 minutos.'
+                ]
+            },
+            {
+                id: 'bolinho-arroz-assado',
+                title: 'Bolinho Assado de Arroz com Cenoura e Cheiro-Verde',
+                tag: 'Lanche • Zero Sobra',
+                time: '30 min',
+                emoji: '🍙',
+                color: 'bg-lime-100 text-lime-800',
+                summary: 'Transforma sobras limpas de arroz branco cozido em bolinhos assados em tabuleiros grandes, sem precisar de fritura.',
+                saves: 'Reaproveita 100% do arroz cozido que sobrou do almoço e talos de temperos',
+                ingredients: [
+                    'Arroz branco cozido (sobra limpa e refrigerada)',
+                    'Ovos inteiros da agricultura familiar',
+                    'Cenoura ralada fina (com casca limpa) e talos de salsinha/cebolinha picados',
+                    'Farinha de trigo ou fubá para dar liga',
+                    'Fermento químico em pó, óleo de soja e sal'
+                ],
+                steps: [
+                    'Em uma bacia grande, misture o arroz cozido, os ovos, a cenoura ralada e os talos picados.',
+                    'Acrescente a farinha de trigo aos poucos até dar ponto de modelar com a colher.',
+                    'Misture o fermento, faça porções com uma colher sobre assadeiras untadas e asse a 200°C por 25 minutos até dourar.'
+                ]
+            },
+            {
+                id: 'pudim-pao-banana',
+                title: 'Pudim de Pão Amanhecido com Banana e Canela',
+                tag: 'Sobremesa • Mais Merenda',
+                time: '45 min',
+                emoji: '🍮',
+                color: 'bg-orange-100 text-orange-900',
+                summary: 'Aproveita pães franceses ou bisnaguinhas do dia anterior junto com bananas maduras, sem jogar nada fora.',
+                saves: 'Evita o descarte de pães amanhecidos e bananas muito maduras',
+                ingredients: [
+                    'Pães franceses ou bisnaguinhas amanhecidos picados',
+                    'Leite integral enviado para a merenda',
+                    'Bananas bem maduras amassadas',
+                    'Ovos inteiros, açúcar e canela em pó'
+                ],
+                steps: [
+                    'Deixe os pães picados de molho no leite por 15 minutos até amolecerem bem.',
+                    'Misture os ovos batidos, as bananas amassadas, o açúcar e a canela até formar uma massa homogênea.',
+                    'Despeje em assadeiras grandes caramelizadas ou untadas e asse em forno médio por 35 minutos.'
+                ]
+            },
+            {
+                id: 'sopa-creme-abobora-talos',
+                title: 'Sopa Creme de Abóbora Cabotiá com Talos e Frango',
+                tag: 'Almoço • Inverno PR',
+                time: '35 min',
+                emoji: '🎃',
+                color: 'bg-amber-100 text-amber-900',
+                summary: 'Feita com a abóbora cabotiá inteira (com casca bem lavada) da agricultura familiar paranaense, ideal para dias frios.',
+                saves: 'Usa a abóbora com casca e talos de couve ou espinafre sem descarte',
+                ingredients: [
+                    'Abóbora cabotiá bem lavada e picada em cubos (com casca)',
+                    'Peito de frango cozido e desfiado ou carne moída',
+                    'Talos e folhas verdes picados (couve, brócolis ou cheiro-verde)',
+                    'Alho, cebola, óleo de soja e sal'
+                ],
+                steps: [
+                    'Refogue o alho e a cebola no caldeirão e cozinhe a abóbora picada (com casca) em água até ficar bem macia.',
+                    'Bata ou amasse a abóbora até virar um creme aveludado e nutritivo.',
+                    'Volte ao fogo, acrescente o frango desfiado e os talos picados, deixe ferver por 5 minutos e sirva.'
+                ]
+            },
+            {
+                id: 'canjica-cremosa-merenda',
+                title: 'Canjica Cremosa com Coco ou Amendoim',
+                tag: 'Lanche Quente • Tradição',
+                time: '45 min',
+                emoji: '🥣',
+                color: 'bg-yellow-100 text-yellow-900',
+                summary: 'Item clássico da pauta escolar do Paraná que rende muitas porções quentes e tem quase zero sobra nos pratos.',
+                saves: 'Aproveita integralmente o milho de canjica e o leite da pauta escolar',
+                ingredients: [
+                    'Milho para canjica (branco ou amarelo, enviado pelo Fundepar)',
+                    'Leite integral',
+                    'Açúcar e canela em pau ou em pó',
+                    'Coco ralado ou amendoim torrado moído (quando disponível no cardápio)'
+                ],
+                steps: [
+                    'Deixe o milho de canjica de molho em água de um dia para o outro e cozinhe na pressão até os grãos ficarem macios.',
+                    'Acrescente o leite, o açúcar e a canela, deixando ferver em fogo baixo mexendo sempre para engrossar o caldo.',
+                    'Finalize com coco ralado ou amendoim e sirva bem quentinha no lanche.'
+                ]
+            }
+        ];
+
+        // ==========================================
+        // 2. PERSISTÊNCIA (LOCALSTORAGE) E INICIALIZAÇÃO
+        // ==========================================
+        function initApp() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && parsed.calendar) {
+                        // Migração automática caso dados antigos ainda não tenham meta individual por mês
+                        const defaultGoal = parsed.monthlyGoalKg || 60.0;
+                        for (let m = 0; m < 12; m++) {
+                            if (parsed.calendar[m] && !parsed.calendar[m].weeks) {
+                                parsed.calendar[m] = {
+                                    monthlyGoalKg: defaultGoal,
+                                    weeks: parsed.calendar[m]
+                                };
+                            }
+                        }
+                        appState = parsed;
+                    }
+                } else {
+                    appState = createSampleState();
+                    saveState();
+                }
+            } catch (e) {
+                console.error('Erro ao ler localStorage:', e);
+                appState = createSampleState();
+            }
+
+            // Atualiza inputs das metas
+            document.getElementById('goal-input').value = appState.weeklyGoalKg;
+            document.getElementById('monthly-goal-input').value = getMonthGoal(appState.selectedMonth);
+
+            // Renderiza todas as visões
+            renderScoreboard();
+            renderMonthlyReport();
+            renderRecipes();
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+            } catch (e) {
+                console.error('Erro ao salvar no localStorage:', e);
+            }
+        }
+
+        function getActiveWeekWeights() {
+            return appState.calendar[appState.selectedMonth].weeks[appState.selectedWeek];
+        }
+
+        function getMonthGoal(monthIndex) {
+            return appState.calendar[monthIndex].monthlyGoalKg || 60.0;
+        }
+
+        // ==========================================
+        // 3. NAVEGAÇÃO ENTRE ABAS
+        // ==========================================
+        function switchTab(tabName) {
+            const tabs = ['placar', 'relatorio', 'guia', 'receitas'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const sec = document.getElementById(`section-${t}`);
+                if (t === tabName) {
+                    btn.classList.add('tab-active');
+                    btn.classList.remove('text-slate-600', 'hover:bg-slate-100');
+                    btn.setAttribute('aria-selected', 'true');
+                    sec.classList.remove('hidden');
+                } else {
+                    btn.classList.remove('tab-active');
+                    btn.classList.add('text-slate-600', 'hover:bg-slate-100');
+                    btn.setAttribute('aria-selected', 'false');
+                    sec.classList.add('hidden');
+                }
+            });
+
+            if (tabName === 'relatorio') {
+                renderMonthlyReport();
+            } else if (tabName === 'placar') {
+                renderScoreboard();
+            }
+        }
+
+        // ==========================================
+        // 4. LÓGICA DO PLACAR DE DESPERDÍCIO
+        // ==========================================
+        function handleWeightSubmit(event) {
+            event.preventDefault();
+            const day = document.getElementById('day-select').value;
+            const inputEl = document.getElementById('weight-input');
+            const val = parseFloat(inputEl.value);
+
+            if (isNaN(val) || val < 0) {
+                showToast('Por favor, insira um peso válido em kg.', 'error');
+                return;
+            }
+
+            appState.calendar[appState.selectedMonth].weeks[appState.selectedWeek][day] = Number(val.toFixed(2));
+            saveState();
+            renderScoreboard();
+            renderMonthlyReport();
+
+            const dayObj = DAYS_META.find(d => d.id === day);
+            const monthObj = MONTHS_META[appState.selectedMonth];
+            showToast(`${dayObj.full} (${val.toFixed(1)} kg) salvo em ${monthObj.short} - Sem. ${appState.selectedWeek}!`, 'success');
+            inputEl.value = '';
+        }
+
+        function updateWeeklyGoal(newVal) {
+            const parsed = parseFloat(newVal);
+            if (!isNaN(parsed) && parsed > 0) {
+                appState.weeklyGoalKg = parsed;
+                saveState();
+                renderScoreboard();
+                renderMonthlyReport();
+                showToast(`Meta semanal atualizada para ${parsed.toFixed(1)} kg.`, 'info');
+            }
+        }
+
+        function updateMonthlyGoal(newVal) {
+            const parsed = parseFloat(newVal);
+            if (!isNaN(parsed) && parsed > 0) {
+                const mIdx = appState.selectedMonth;
+                const monthObj = MONTHS_META[mIdx];
+                appState.calendar[mIdx].monthlyGoalKg = parsed;
+                saveState();
+                renderMonthlyReport();
+                showToast(`Meta de ${monthObj.full} atualizada para ${parsed.toFixed(1)} kg.`, 'info');
+            }
+        }
+
+        function renderScoreboard() {
+            const weights = getActiveWeekWeights();
+            const values = Object.values(weights);
+            const monthObj = MONTHS_META[appState.selectedMonth];
+
+            // Atualiza badge de período ativo
+            document.getElementById('active-period-badge').textContent = `${monthObj.full} • Semana ${appState.selectedWeek}`;
+            
+            // 1. Cálculo Total e Refeições Equivalentes
+            const totalKg = values.reduce((acc, curr) => acc + curr, 0);
+            const lostMeals = Math.round(totalKg / MEAL_WEIGHT_KG);
+
+            document.getElementById('kpi-total-kg').textContent = totalKg.toFixed(1);
+            document.getElementById('kpi-meals').textContent = lostMeals;
+
+            // 2. Cálculo do Melhor Dia
+            const recordedDays = DAYS_META.filter(d => weights[d.id] > 0);
+            const bestDayEl = document.getElementById('kpi-best-day');
+            const bestDaySubEl = document.getElementById('kpi-best-day-sub');
+
+            if (recordedDays.length > 0) {
+                let best = recordedDays[0];
+                recordedDays.forEach(d => {
+                    if (weights[d.id] < weights[best.id]) {
+                        best = d;
+                    }
+                });
+                bestDayEl.textContent = best.full;
+                bestDaySubEl.textContent = `apenas ${weights[best.id].toFixed(1)} kg de sobras`;
+            } else {
+                bestDayEl.textContent = 'Sem registros';
+                bestDaySubEl.textContent = 'lance a pesagem do dia';
+            }
+
+            // 3. Atualização da Barra de Meta Semanal
+            const goal = appState.weeklyGoalKg || 15;
+            document.getElementById('goal-target-label').textContent = `${goal.toFixed(1)} kg`;
+            
+            const percentage = Math.min((totalKg / goal) * 100, 100);
+            const progressBar = document.getElementById('goal-progress-bar');
+            const feedbackBox = document.getElementById('goal-feedback');
+
+            progressBar.style.width = `${percentage}%`;
+
+            if (totalKg === 0) {
+                progressBar.className = 'h-full rounded-full bg-emerald-500 progress-transition';
+                feedbackBox.className = 'mt-3 p-3.5 rounded-2xl text-sm font-medium flex items-center gap-2.5 bg-slate-100 text-slate-700';
+                feedbackBox.innerHTML = `<span class="text-lg">✨</span> <span>Semana pronta! Registre a pesagem diária para acompanhar a meta semanal.</span>`;
+            } else if (totalKg <= goal * 0.75) {
+                progressBar.className = 'h-full rounded-full bg-emerald-500 progress-transition';
+                feedbackBox.className = 'mt-3 p-3.5 rounded-2xl text-sm font-medium flex items-center gap-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200';
+                feedbackBox.innerHTML = `<span class="text-lg">🎉</span> <span><strong>Mandando bem!</strong> Estamos dentro da meta semanal (${((totalKg/goal)*100).toFixed(0)}% do limite).</span>`;
+            } else if (totalKg <= goal) {
+                progressBar.className = 'h-full rounded-full bg-amber-500 progress-transition';
+                feedbackBox.className = 'mt-3 p-3.5 rounded-2xl text-sm font-medium flex items-center gap-2.5 bg-amber-50 text-amber-900 border border-amber-200';
+                feedbackBox.innerHTML = `<span class="text-lg">⚠️</span> <span><strong>Atenção no refeitório!</strong> Já atingimos ${((totalKg/goal)*100).toFixed(0)}% do limite semanal. Vamos servir porções menores!</span>`;
+            } else {
+                progressBar.className = 'h-full rounded-full bg-rose-600 progress-transition';
+                feedbackBox.className = 'mt-3 p-3.5 rounded-2xl text-sm font-medium flex items-center gap-2.5 bg-rose-50 text-rose-900 border border-rose-200';
+                feedbackBox.innerHTML = `<span class="text-lg">🚨</span> <span><strong>Alerta de Desperdício!</strong> Ultrapassamos a meta semanal em ${(totalKg - goal).toFixed(1)} kg (${lostMeals} refeições perdidas).</span>`;
+            }
+
+            // 4. Renderização do Gráfico de Barras Comparativo
+            renderBarChart();
+        }
+
+        function renderBarChart() {
+            const container = document.getElementById('chart-container');
+            const weights = getActiveWeekWeights();
+            const maxVal = Math.max(...Object.values(weights), 5);
+
+            container.innerHTML = DAYS_META.map(day => {
+                const val = weights[day.id] || 0;
+                const heightPercent = Math.max((val / maxVal) * 100, 4);
+                
+                let barColor = 'bg-slate-200';
+                if (val > 0) {
+                    if (val <= 2.5) barColor = 'bg-emerald-500';
+                    else if (val <= 4.0) barColor = 'bg-amber-400';
+                    else barColor = 'bg-rose-500';
+                }
+
+                const mealsDay = Math.round(val / MEAL_WEIGHT_KG);
+
+                return `
+                    <div class="flex flex-col items-center flex-1 h-full justify-end group cursor-pointer" onclick="selectDayForEdit('${day.id}')" title="Clique para editar ${day.full}">
+                        <div class="mb-2 text-center">
+                            <span class="block text-xs sm:text-sm font-bold text-slate-800">${val.toFixed(1)}kg</span>
+                            <span class="hidden sm:block text-[10px] text-slate-400">${mealsDay} prat.</span>
+                        </div>
+                        
+                        <div class="w-full max-w-[54px] h-[160px] bg-slate-100 rounded-2xl flex items-end p-1 overflow-hidden relative">
+                            <div class="w-full ${barColor} rounded-xl bar-transition group-hover:opacity-90" style="height: ${heightPercent}%"></div>
+                        </div>
+
+                        <span class="mt-2.5 text-xs sm:text-sm font-semibold text-slate-600 group-hover:text-emerald-600 transition">
+                            ${day.label}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectDayForEdit(dayId) {
+            const select = document.getElementById('day-select');
+            const input = document.getElementById('weight-input');
+            select.value = dayId;
+            input.value = getActiveWeekWeights()[dayId] || '';
+            input.focus();
+        }
+
+        // Gerenciamento dos Modais de Reset e Exemplo
+        function openResetModal() {
+            const monthObj = MONTHS_META[appState.selectedMonth];
+            document.getElementById('modal-title').textContent = `Zerar ${monthObj.full} - Semana ${appState.selectedWeek}?`;
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeResetModal() {
+            const modal = document.getElementById('confirm-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        document.getElementById('modal-cancel').addEventListener('click', closeResetModal);
+        document.getElementById('modal-confirm').addEventListener('click', () => {
+            appState.calendar[appState.selectedMonth].weeks[appState.selectedWeek] = { seg: 0, ter: 0, qua: 0, qui: 0, sex: 0 };
+            saveState();
+            renderScoreboard();
+            renderMonthlyReport();
+            closeResetModal();
+            showToast('Semana atual zerada com sucesso!', 'info');
+        });
+
+        function loadSampleData() {
+            appState = createSampleState();
+            document.getElementById('goal-input').value = appState.weeklyGoalKg;
+            document.getElementById('monthly-goal-input').value = getMonthGoal(appState.selectedMonth);
+            saveState();
+            renderScoreboard();
+            renderMonthlyReport();
+            showToast('Dados de exemplo restaurados!', 'success');
+        }
+
+        // ==========================================
+        // 5. LÓGICA DO RELATÓRIO E CALENDÁRIO MENSAL
+        // ==========================================
+        function getWeekTotal(monthIndex, weekNum) {
+            const w = appState.calendar[monthIndex].weeks[weekNum];
+            return Object.values(w).reduce((acc, v) => acc + v, 0);
+        }
+
+        function getMonthTotal(monthIndex) {
+            let sum = 0;
+            for (let w = 1; w <= 4; w++) {
+                sum += getWeekTotal(monthIndex, w);
+            }
+            return sum;
+        }
+
+        function selectMonth(monthIndex) {
+            appState.selectedMonth = monthIndex;
+            saveState();
+            renderMonthlyReport();
+            renderScoreboard();
+        }
+
+        function selectWeekAndEdit(weekNum) {
+            appState.selectedWeek = weekNum;
+            saveState();
+            switchTab('placar');
+            const monthObj = MONTHS_META[appState.selectedMonth];
+            showToast(`Editando ${monthObj.full} • Semana ${weekNum}`, 'info');
+        }
+
+        function renderMonthlyReport() {
+            const mIdx = appState.selectedMonth;
+            const monthObj = MONTHS_META[mIdx];
+            const monthlyGoal = getMonthGoal(mIdx);
+            const weeklyGoal = appState.weeklyGoalKg || 15;
+
+            // Atualiza o campo de edição da meta individual do mês selecionado
+            document.getElementById('monthly-goal-label-month').textContent = monthObj.full;
+            document.getElementById('monthly-goal-input').value = monthlyGoal;
+
+            // 1. Renderiza o Pequeno Calendário com os 12 Meses do Ano
+            const monthsGrid = document.getElementById('months-calendar-grid');
+            monthsGrid.innerHTML = MONTHS_META.map(m => {
+                const mTotal = getMonthTotal(m.id);
+                const mGoal = getMonthGoal(m.id);
+                const isSelected = m.id === mIdx;
+                const hasData = mTotal > 0;
+
+                let statusDot = 'bg-slate-200';
+                if (hasData) {
+                    statusDot = mTotal <= mGoal ? 'bg-emerald-500' : 'bg-rose-500';
+                }
+
+                return `
+                    <button type="button" onclick="selectMonth(${m.id})"
+                        class="p-3 rounded-2xl border-2 text-left transition flex flex-col justify-between ${
+                            isSelected
+                                ? 'border-emerald-600 bg-emerald-50/80 shadow-sm'
+                                : 'border-slate-100 bg-slate-50/70 hover:bg-slate-100'
+                        }">
+                        <div class="flex items-center justify-between w-full mb-1.5">
+                            <span class="font-display font-bold text-sm ${isSelected ? 'text-emerald-800' : 'text-slate-700'}">
+                                ${m.short}
+                            </span>
+                            <span class="w-2.5 h-2.5 rounded-full ${statusDot}"></span>
+                        </div>
+                        <span class="text-xs font-semibold ${hasData ? 'text-slate-800' : 'text-slate-400'}">
+                            ${hasData ? mTotal.toFixed(1) + ' kg' : 'Sem dados'}
+                        </span>
+                        <span class="text-[10px] text-slate-400 mt-0.5">
+                            Meta: ${mGoal.toFixed(0)}kg
+                        </span>
+                    </button>
+                `;
+            }).join('');
+
+            // 2. Atualiza Cabeçalho e Progresso da Meta Mensal
+            const monthTotal = getMonthTotal(mIdx);
+            document.getElementById('report-month-name').textContent = monthObj.full;
+            document.getElementById('weeks-section-month').textContent = monthObj.full;
+            document.getElementById('report-month-total').textContent = monthTotal.toFixed(1);
+            document.getElementById('report-month-goal').textContent = monthlyGoal.toFixed(1);
+
+            const monthPct = Math.min((monthTotal / monthlyGoal) * 100, 100);
+            const monthBar = document.getElementById('month-progress-bar');
+            const monthFeedback = document.getElementById('month-goal-feedback');
+
+            monthBar.style.width = `${monthPct}%`;
+
+            if (monthTotal === 0) {
+                monthBar.className = 'h-full rounded-full bg-emerald-500 progress-transition';
+                monthFeedback.className = 'mt-3 p-3.5 rounded-2xl text-sm font-medium flex items-center gap-2.5 bg-slate-100 text-slate-700';
+                monthFeedback.innerHTML = `<span class="text-lg">📅</span> <span>Nenhum peso registrado em ${monthObj.full} ainda. Clique em uma semana abaixo para lançar os dados.</span>`;
+            } else if (monthTotal <= monthlyGoal * 0.8) {
+                monthBar.className = 'h-full rounded-full bg-emerald-500 progress-transition';
+                monthFeedback.className = 'mt-3 p-3.5 rounded-2xl text-sm font-medium flex items-center gap-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200';
+                monthFeedback.innerHTML = `<span class="text-lg">🏆</span> <span><strong>Excelente resultado mensal!</strong> ${monthObj.full} está com ${monthTotal.toFixed(1)} kg (${((monthTotal/monthlyGoal)*100).toFixed(0)}% da meta máxima mensal).</span>`;
+            } else if (monthTotal <= monthlyGoal) {
+                monthBar.className = 'h-full rounded-full bg-amber-500 progress-transition';
+                monthFeedback.className = 'mt-3 p-3.5 rounded-2xl text-sm font-medium flex items-center gap-2.5 bg-amber-50 text-amber-900 border border-amber-200';
+                monthFeedback.innerHTML = `<span class="text-lg">⚠️</span> <span><strong>No limite da meta mensal:</strong> ${monthObj.full} já consumiu ${((monthTotal/monthlyGoal)*100).toFixed(0)}% do limite permitido.</span>`;
+            } else {
+                monthBar.className = 'h-full rounded-full bg-rose-600 progress-transition';
+                monthFeedback.className = 'mt-3 p-3.5 rounded-2xl text-sm font-medium flex items-center gap-2.5 bg-rose-50 text-rose-900 border border-rose-200';
+                monthFeedback.innerHTML = `<span class="text-lg">🚨</span> <span><strong>Meta mensal ultrapassada!</strong> O mês de ${monthObj.full} passou ${(monthTotal - monthlyGoal).toFixed(1)} kg acima do objetivo.</span>`;
+            }
+
+            // 3. Renderiza os Cards das 4 Semanas do Mês
+            const weeksGrid = document.getElementById('weeks-cards-grid');
+            let weeksHtml = '';
+
+            for (let w = 1; w <= 4; w++) {
+                const wTotal = getWeekTotal(mIdx, w);
+                const wPct = Math.min((wTotal / weeklyGoal) * 100, 100);
+                const isCurrentWeek = appState.selectedWeek === w;
+
+                let statusBadge = '<span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500">Vazia</span>';
+                let barColor = 'bg-slate-300';
+
+                if (wTotal > 0) {
+                    if (wTotal <= weeklyGoal) {
+                        statusBadge = '<span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Dentro da Meta</span>';
+                        barColor = 'bg-emerald-500';
+                    } else {
+                        statusBadge = '<span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700">Acima da Meta</span>';
+                        barColor = 'bg-rose-500';
+                    }
+                }
+
+                weeksHtml += `
+                    <div onclick="selectWeekAndEdit(${w})"
+                        class="bg-white p-5 rounded-3xl border-2 transition cursor-pointer hover:shadow-md flex flex-col justify-between ${
+                            isCurrentWeek ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-100 hover:border-emerald-300'
+                        }">
+                        <div>
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <span class="font-display font-bold text-slate-800 text-base">Semana ${w}</span>
+                                ${statusBadge}
+                            </div>
+
+                            <div class="mb-2">
+                                <span class="font-display text-2xl font-bold text-slate-900">${wTotal.toFixed(1)} kg</span>
+                                <span class="text-xs text-slate-400"> / meta ${weeklyGoal.toFixed(1)} kg</span>
+                            </div>
+
+                            <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden mb-3">
+                                <div class="h-full ${barColor} rounded-full" style="width: ${wPct}%"></div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-emerald-700">
+                            <span>${isCurrentWeek ? '📍 Selecionada no Placar' : 'Abrir no Placar'}</span>
+                            <span>➡️</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            weeksGrid.innerHTML = weeksHtml;
+        }
+
+        // ==========================================
+        // 6. LÓGICA DAS RECEITAS APROVEITA TUDO
+        // ==========================================
+        function renderRecipes() {
+            const grid = document.getElementById('recipes-grid');
+            grid.innerHTML = RECIPES.map(recipe => `
+                <article onclick="openRecipeModal('${recipe.id}')" 
+                    class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:-translate-y-1 transition-all cursor-pointer flex flex-col justify-between group">
+                    <div>
+                        <!-- Topo colorido com Emoji -->
+                        <div class="h-36 ${recipe.color} flex items-center justify-center text-6xl relative">
+                            <span class="group-hover:scale-110 transition-transform duration-300">${recipe.emoji}</span>
+                            <span class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-slate-800 text-xs font-bold px-3 py-1 rounded-full">
+                                ${recipe.tag}
+                            </span>
+                            <span class="absolute top-3 right-3 bg-slate-900/75 text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+                                ⏱️ ${recipe.time}
+                            </span>
+                        </div>
+                        
+                        <div class="p-6">
+                            <h3 class="font-display text-xl font-bold text-slate-900 mb-2 group-hover:text-emerald-600 transition">
+                                ${recipe.title}
+                            </h3>
+                            <p class="text-sm text-slate-600 leading-relaxed mb-4">
+                                ${recipe.summary}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="px-6 pb-6 pt-2">
+                        <div class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-2 rounded-xl mb-4">
+                            ♻️ ${recipe.saves}
+                        </div>
+                        <button type="button" class="w-full py-2.5 px-4 rounded-xl bg-slate-900 group-hover:bg-emerald-600 text-white text-sm font-bold transition">
+                            Ver Ingredientes e Preparo
+                        </button>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        function openRecipeModal(recipeId) {
+            const recipe = RECIPES.find(r => r.id === recipeId);
+            if (!recipe) return;
+
+            const modal = document.getElementById('recipe-modal');
+            const content = document.getElementById('recipe-modal-content');
+
+            content.innerHTML = `
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-14 h-14 rounded-2xl ${recipe.color} flex items-center justify-center text-3xl shrink-0">
+                        ${recipe.emoji}
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-600">${recipe.tag} • ⏱️ ${recipe.time}</span>
+                        <h3 class="font-display text-2xl font-bold text-slate-900">${recipe.title}</h3>
+                    </div>
+                </div>
+
+                <div class="bg-emerald-50 text-emerald-800 text-xs font-semibold p-3 rounded-2xl mb-5">
+                    ♻️ Impacto positivo: ${recipe.saves}
+                </div>
+
+                <div class="mb-5">
+                    <h4 class="font-display font-bold text-slate-800 text-base mb-2 flex items-center gap-1.5">
+                        🛒 Ingredientes
+                    </h4>
+                    <ul class="space-y-1.5 text-sm text-slate-700 bg-slate-50 p-4 rounded-2xl">
+                        ${recipe.ingredients.map(item => `<li class="flex items-start gap-2"><span class="text-emerald-600 font-bold">•</span> <span>${item}</span></li>`).join('')}
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-display font-bold text-slate-800 text-base mb-2 flex items-center gap-1.5">
+                        👩‍🍳 Modo de Preparo
+                    </h4>
+                    <ol class="space-y-2.5 text-sm text-slate-700">
+                        ${recipe.steps.map((step, i) => `
+                            <li class="flex items-start gap-3">
+                                <span class="w-6 h-6 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">${i + 1}</span>
+                                <span class="leading-relaxed">${step}</span>
+                            </li>
+                        `).join('')}
+                    </ol>
+                </div>
+            `;
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeRecipeModal() {
+            const modal = document.getElementById('recipe-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Fechar modal de receita ao clicar fora do card
+        document.getElementById('recipe-modal').addEventListener('click', function(e) {
+            if (e.target === this) closeRecipeModal();
+        });
+
+        // ==========================================
+        // 7. SISTEMA DE NOTIFICAÇÃO TOAST
+        // ==========================================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                success: 'bg-slate-900 text-white border-l-4 border-emerald-500',
+                error: 'bg-rose-600 text-white',
+                info: 'bg-slate-800 text-white border-l-4 border-amber-400'
+            };
+
+            toast.className = `${colors[type] || colors.success} px-4 py-3 rounded-2xl shadow-xl text-sm font-medium flex items-center gap-2 transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto max-w-xs sm:max-w-sm`;
+            toast.innerHTML = `<span>${message}</span>`;
+            
+            container.appendChild(toast);
+
+            // Animação de entrada
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            // Remove após 3.2 segundos
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        // Inicializa o app ao carregar a página
+        if (document.readyState === 'loading') {
+            window.addEventListener('DOMContentLoaded', initApp);
+        } else {
+            initApp();
+        }
+
+        // Expõe as funções chamadas por atributos HTML (onclick / onsubmit / onchange)
+        window.switchTab = switchTab;
+        window.handleWeightSubmit = handleWeightSubmit;
+        window.updateWeeklyGoal = updateWeeklyGoal;
+        window.updateMonthlyGoal = updateMonthlyGoal;
+        window.selectDayForEdit = selectDayForEdit;
+        window.selectMonth = selectMonth;
+        window.selectWeekAndEdit = selectWeekAndEdit;
+        window.openResetModal = openResetModal;
+        window.closeResetModal = closeResetModal;
+        window.loadSampleData = loadSampleData;
+        window.openRecipeModal = openRecipeModal;
+        window.closeRecipeModal = closeRecipeModal;
+        })();
+    </script>
+</body>
+</html>
